@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Copyright 2024 Tobias Görgens
+
+# Check if the bootstrap file already exists
+[ -f "${bootstrap_file}" ] || error "Steam Setup file not found. Please try again."
+log "[Steam Downloader] Bootstrap file exists. Proceeding..."
+probe_partitions ${TIK_INSTALL_DEVICE} "crypto_LUKS"
+[ -z "${probedpart}" ] || prun /usr/sbin/cryptsetup luksOpen --key-file=${tik_keyfile} ${cryptpart} aeon_root
+probe_partitions $TIK_INSTALL_DEVICE "btrfs" "/usr/lib/os-release"
+[ -n "${probedpart}" ] || error "STEAM SETUP FAILED: New Installation NOT FOUND"
+log "[Steam Downloader] New Installation found. Proceeding..."
+(
+    prun /usr/bin/mkdir "${steam_dir}/mnt"
+    prun /usr/bin/mount -o compress=zstd:1 ${probedpart} "${steam_dir}/mnt"
+    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/home "${probedpart}" "${steam_dir}/mnt/home"
+    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/var "${probedpart}" "${steam_dir}/mnt/var"
+    etcmountcmd=$(cat "${steam_dir}/mnt/etc/fstab" | grep "overlay /etc" | sed 's/\/sysroot\//${steam_dir}\/mnt\//g' | sed 's/\/work-etc.*/\/work-etc ${steam_dir}\/mnt\/etc\//' | sed 's/overlay \/etc overlay/\/usr\/bin\/mount -t overlay overlay -o/')
+    eval prun "$etcmountcmd"
+    prun mkdir -p "${steam_dir}/mnt/etc/first-boot"
+    prun /usr/bin/cp "${bootstrap_file}" "${steam_dir}/mnt/etc/first-boot/bootstraplinux_ubuntu12_32.tar.xz"
+) | d --progress --title="Preparing Steam" --text="Copying Steam Setup" --pulsate --auto-close --no-cancel --width=400
+prun /usr/bin/umount "${steam_dir}/mnt/etc"
+prun /usr/bin/umount "${steam_dir}/mnt/var"
+prun /usr/bin/umount "${steam_dir}/mnt/home"
+prun /usr/bin/umount "${steam_dir}/mnt"
+prun /usr/bin/rmdir "${steam_dir}/mnt"
