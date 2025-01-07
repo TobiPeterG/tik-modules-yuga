@@ -104,7 +104,7 @@ configure_factory_reset() {
 close_partition() {
     echo "# Closing ${cryptpart}" > ${factory_reset_pipe}
     log "[close_partition] unmounting and closing ${cryptpart}"
-    for i in proc dev run tmp 'boot/efi' etc var '.snapshots' 'sys/kernel/security' 'sys/firmware/efi/efivars' 'sys/fs/cgroup' sys 'mnt/mnt'; do
+    for i in proc dev run tmp 'boot/efi' etc var '.snapshots' 'sys/kernel/security' 'sys/firmware/efi/efivars' 'sys/fs/cgroup' sys mnt; do
         prun /usr/bin/umount "${factory_reset_dir}/mnt/$i"
     done
     prun /usr/bin/umount ${factory_reset_dir}/mnt

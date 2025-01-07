@@ -210,6 +210,7 @@ add_fallback_key() {
         fi
         break
     done
+    echo "100" > ${encrypt_pipe}
 }
 
 display_gamepadKey() {
@@ -237,6 +238,7 @@ add_key() {
         fi
         return 0
     fi
+    echo "80" > ${encrypt_pipe}
 
     echo "# Gathering device info" > "${encrypt_pipe}"
     local device_info
@@ -249,7 +251,7 @@ add_key() {
 
     local matched_line=""
     while IFS= read -r line; do
-        local vendor product devname instructions
+        local vendor product devname shift alternate enter instructions
         vendor="$(echo "$line" | grep -oP "Vendor:\s*'\K[^']+")"
         product="$(echo "$line" | grep -oP "Product:\s*'\K[^']+")"
         devname="$(echo "$line" | grep -oP "Device:\s*'\K[^']+")"
@@ -263,6 +265,7 @@ add_key() {
             break
         fi
     done <<< "$device_info"
+    echo "82" > ${encrypt_pipe}
 
     if [ "${ret_d}" -ne 0 ] || [ -z "$matched_line" ]; then
         log "[add_key] deckrypt -d failed => code ${ret_d}."
@@ -287,11 +290,14 @@ add_key() {
                 return 0
             fi
         fi
+    else
+        local msg="We detected that you are running the installer on your <b>${devname}</b>. You will now setup a recovery key that you enter using the gamepad."
+        d --width=500 --warning --title="Gamepad recovery key" \
+          --text="${msg}"
     fi
-    
-    local msg="We detected that you are running the installer on your <b>${devname}</b>. You will now setup a recovery key that you enter using the gamepad."
-    d --width=500 --warning --title="Gamepad recovery key" \
-      --text="${msg}"
+
+    echo "86" > ${encrypt_pipe}
+    echo "# Preparing passphrase creation" > "${encrypt_pipe}"
 
     passphrase_file="/tmp/deckrypt_passphrase"
     (
@@ -381,6 +387,9 @@ add_key() {
         fi
         break
     done
+
+    echo "90" > ${encrypt_pipe}
+    echo "# Enrolling custom key" > "${encrypt_pipe}"
     kill $deckrypt_pid
     key=$key1
     friendly_gamepad_inputs="$(IFS='; ' ; echo "${final_arr1[*]}")"
@@ -391,6 +400,7 @@ add_key() {
         add_fallback_key
         return 0
     fi
+    echo "100" > ${encrypt_pipe}
     display_gamepadKey
 }
 
