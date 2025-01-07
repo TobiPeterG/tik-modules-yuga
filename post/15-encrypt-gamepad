@@ -267,7 +267,7 @@ add_key() {
     if [ "${ret_d}" -ne 0 ] || [ -z "$matched_line" ]; then
         log "[add_key] deckrypt -d failed => code ${ret_d}."
         if [ "${tik_encrypt_mode}" == 1 ]; then
-            d --width=500 --warning --title="Controller Found" \
+            zenity --width=500 --question --title="Controller Found" \
               --text="A supported controller has been detected.\\nYou may proceed to create two fallback passphrases, one using this gamepad and one using your keyboard or skip and create one fallback passphrase using only your keyboard." \
               --ok-label="Proceed" \
               --cancel-label="Skip"
@@ -276,7 +276,7 @@ add_key() {
                 return 0
             fi
         elif [ "${tik_encrypt_mode}" == 0 ]; then
-            d --width=500 --warning --title="Controller Found" \
+            zenity --width=500 --question --title="Controller Found" \
               --text="A supported controller has been detected.\\nYou may proceed to create a recovery passphrase using this gamepad or skip and let us create a random recovery passphrase." \
               --ok-label="Proceed" \
               --cancel-label="Skip"
@@ -289,7 +289,7 @@ add_key() {
         fi
     fi
     
-    local msg="We detected that you are running the installer on your '${devname}'. You will now setup a recovery key that you enter using the gamepad."
+    local msg="We detected that you are running the installer on your <b>${devname}</b>. You will now setup a recovery key that you enter using the gamepad."
     d --width=500 --warning --title="Gamepad recovery key" \
       --text="${msg}"
 
@@ -306,9 +306,10 @@ add_key() {
     do
         rm -f "$passphrase_file"
         msg="Enter a passphrase using the gamepad"
-        gmsg="\\n\\nEvery gamepad button/axis results in one character and cannot be combined, except for three buttons/axes:\\n\\nThere is one ENTER key: ${enter}\\n\\nThere are two modifier keys:\\nSHIFT: ${shift}\\nALTERNATE: ${alternate}\\nPress and hold one of these two modifier inputs and press a regular input to create a different character.\\nPress the ENTER input on its own to emulate pressing the enter key.\\nPress and hold SHIFT OR ALTERNATE and press ENTER to delete the last character."
-        [ -z "$instructions" ] || gmsg="$gmsg\\n\\nPlease follow these instructions for your device:\\n${instructions}"
-        msg="${msg}${gmsg}\\n\\nClick 'OK' to finish your input."
+        gmsg="\\n\\nEvery gamepad button/axis results in one character and cannot be combined, except for this buttons/axis:\\n• <b>ENTER</b>: ${enter}\\nAnd these two modifier keys:\\n• <b>SHIFT</b>: ${shift}\\n• <b>ALTERNATE</b>: ${alternate}\\n\\nThese buttons have the following functions:\\n• Press and hold one of these two modifier inputs and press a regular input to create a different character.\\n• Press the <b>ENTER</b> input on its own to emulate pressing the enter key.\\n• Press and hold <b>SHIFT OR ALTERNATE</b> and press <b>ENTER</b> to delete the last character."
+        [ -z "$instructions" ] || imsg="\\n\\nPlease follow these additional instructions for your device:\\n${instructions}"
+        omsg="\\n\\nClick <b>OK</b> to finish your input."
+        msg="${msg}${gmsg}${imsg}${omsg}"
         retval=0
         key1=$(zenity --forms --add-password="Password:" --text="${msg}" --title="Set Encryption Passphrase") || retval=$?
 
@@ -324,9 +325,7 @@ add_key() {
         do
             rm -f "$passphrase_file"
             msg="Repeat the passphrase using the gamepad"
-            gmsg="\\n\\nEvery gamepad button/axis results in one character and cannot be combined, except for three buttons/axes:\\n\\nThere is one ENTER key: ${enter}\\n\\nThere are two modifier keys:\\nSHIFT: ${shift}\\nALTERNATE: ${alternate}\\nPress and hold one of these two modifier inputs and press a regular input to create a different character.\\nPress the ENTER input on its own to emulate pressing the enter key.\\nPress and hold SHIFT OR ALTERNATE and press ENTER to delete the last character."
-            [ -z "$instructions" ] || gmsg="$gmsg\\n\\nPlease follow these instructions for your device:\\n${instructions}"
-            msg="${msg}${gmsg}\\n\\nClick 'OK' to finish your input."
+            msg="${msg}${gmsg}${imsg}${omsg}"
             retval=0
             key2=$(zenity --forms --add-password="Password:" --text="${msg}" --title="Repeat Encryption Passphrase") || retval=$?
 
