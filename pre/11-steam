@@ -6,9 +6,7 @@ steam_dir="/var/lib/tik/steam"
 bootstrap_file="${steam_dir}/bootstraplinux_ubuntu12_32.tar.xz"
 repo_url="https://steamdeck-packages.steamos.cloud/archlinux-mirror/jupiter-main/os/x86_64/"
 
-if [ ! -d ${steam_dir} ]; then
-    prun /usr/bin/mkdir -p ${steam_dir}
-fi
+[ -d "${steam_dir}" ] || prun /usr/bin/mkdir -p "${steam_dir}"
 
 # Function to get the latest package URL
 get_latest_package_url() {
