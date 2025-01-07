@@ -242,7 +242,7 @@ add_key() {
 
     echo "# Gathering device info" > "${encrypt_pipe}"
     local device_info
-    device_info="$(deckrypt -d)"
+    device_info="$(deckrypt -d -a)"
     local ret_d=$?
 
     local sysvendor productname
