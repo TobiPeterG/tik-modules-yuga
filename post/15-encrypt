@@ -313,6 +313,8 @@ add_key() {
     while true
     do
         true > "$passphrase_file"
+        final_arr1=()
+        final_arr2=()
         msg="Enter a passphrase using the gamepad"
         gmsg="\\n\\nEvery gamepad button/axis results in one character and cannot be combined, except for this buttons/axis:\\n• <b>ENTER</b>: ${enter}\\nAnd these two modifier keys:\\n• <b>SHIFT</b>: ${shift}\\n• <b>ALTERNATE</b>: ${alternate}\\n\\nThese buttons have the following functions:\\n• Press and hold one of these two modifier inputs and press a regular input to create a different character.\\n• Press the <b>ENTER</b> input on its own to emulate pressing the enter key.\\n• Press and hold <b>SHIFT OR ALTERNATE</b> and press <b>ENTER</b> to delete the last character."
         [ -z "$instructions" ] || imsg="\\n\\nPlease follow these additional instructions for your device:\\n${instructions}"
