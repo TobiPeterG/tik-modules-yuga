@@ -192,7 +192,6 @@ add_fallback_key() {
     # Not using 'd' function to avoid logging the password
     while true
     do
-        retval=0
         if $gui; then
             key=$(zenity --password --title='Set Encryption Passphrase')
             key_check=$(zenity --password --title='Type Passphrase Again')
@@ -270,19 +269,21 @@ add_key() {
     if [ "${ret_d}" -ne 0 ] || [ -z "$matched_line" ]; then
         log "[add_key] deckrypt -d failed => code ${ret_d}."
         if [ "${tik_encrypt_mode}" == 1 ]; then
+            retval=0
             zenity --width=500 --question --title="Controller Found" \
               --text="A supported controller has been detected.\\nYou may proceed to create two fallback passphrases, one using this gamepad and one using your keyboard or skip and create one fallback passphrase using only your keyboard." \
               --ok-label="Proceed" \
-              --cancel-label="Skip"
+              --cancel-label="Skip" || retval=$?
             if [ "$retval" -ne 0 ]; then
                 add_fallback_key
                 return 0
             fi
         elif [ "${tik_encrypt_mode}" == 0 ]; then
+            retval=0
             zenity --width=500 --question --title="Controller Found" \
               --text="A supported controller has been detected.\\nYou may proceed to create a recovery passphrase using this gamepad or skip and let us create a random recovery passphrase." \
               --ok-label="Proceed" \
-              --cancel-label="Skip"
+              --cancel-label="Skip" || retval=$?
             if [ "$retval" -ne 0 ]; then
                 generate_recoveryKey
                 add_recoveryKey
