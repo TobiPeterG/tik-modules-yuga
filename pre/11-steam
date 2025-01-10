@@ -34,32 +34,32 @@ if [ ! -f "${bootstrap_file}" ]; then
 
     log "[Steam Downloader] Downloading the latest package: ${latest_package_url}..."
     (
-        prun-opt /usr/bin/wget ${latest_package_url} -O ${steam_dir}/${latest_package} 2>&1 | \
+        prun-opt /usr/bin/wget "${latest_package_url}" -O ${steam_dir}/"${latest_package}" 2>&1 | \
         while read -r line; do
             if [[ "$line" =~ ([0-9]+)% ]]; then
                 percent=${BASH_REMATCH[1]}
-                echo $percent
+                echo "$percent"
             fi
         done
     ) | d --progress --title="Downloading Steam Setup Package" --percentage=0 --auto-close --no-cancel --width=400
 
     if [ $? -ne 0 ]; then
-        prun /usr/bin/rm ${steam_dir}/${latest_package}
+        prun /usr/bin/rm ${steam_dir}/"${latest_package}"
         error "Failed to download the latest Steam Setup package.\nPlease check your internet connection and try again."
     fi
 
     log "[Steam Downloader] Extracting Setup file from the package..."
     (
-        /usr/bin/tar -I zstd -xvf ${steam_dir}/${latest_package} usr/lib/steam/bootstraplinux_ubuntu12_32.tar.xz -O > /tmp/bootstraplinux_ubuntu12_32.tar.xz
+        /usr/bin/tar -I zstd -xvf ${steam_dir}/"${latest_package}" usr/lib/steam/bootstraplinux_ubuntu12_32.tar.xz -O > /tmp/bootstraplinux_ubuntu12_32.tar.xz
     ) | d --progress --title="Extracting File" --text="Extracting..." --pulsate --auto-close --no-cancel --width=400
     
     if [ $? -ne 0 ]; then
-        prun-opt /usr/bin/rm ${steam_dir}/${latest_package}
+        prun-opt /usr/bin/rm ${steam_dir}/"${latest_package}"
         prun-opt /usr/bin/rm ${bootstrap_file}
         error "Failed to extract the latest Steam Setup package.\nPlease try again."
     fi
     prun /usr/bin/mv /tmp/bootstraplinux_ubuntu12_32.tar.xz ${bootstrap_file}
-    prun /usr/bin/rm ${steam_dir}/${latest_package}
+    prun /usr/bin/rm ${steam_dir}/"${latest_package}"
 
     log "[Steam Downloader] Setup file has been extracted and placed in ${bootstrap_file}"
 else

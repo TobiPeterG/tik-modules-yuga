@@ -37,7 +37,7 @@ crypt_progress() {
 find_crypt() {
     echo "# Finding encrypted partition" > ${encrypt_pipe}
     log "[find_crypt] finding encrypted partition"
-    probe_partitions ${TIK_INSTALL_DEVICE} "crypto_LUKS"
+    probe_partitions "${TIK_INSTALL_DEVICE}" "crypto_LUKS"
     if [ -z "${probedpart}" ]; then
         error "encrypted partition not found"
     fi
@@ -49,7 +49,7 @@ find_crypt() {
 find_esp() {
     echo "# Finding encrypted partition" > ${encrypt_pipe}
     log "[find_esp] finding ESP"
-    probe_partitions ${TIK_INSTALL_DEVICE} "vfat"
+    probe_partitions "${TIK_INSTALL_DEVICE}" "vfat"
     if [ -z "${probedpart}" ]; then
         error "esp partition not found"
     fi
@@ -61,17 +61,17 @@ find_esp() {
 open_partition() {
     echo "# Opening ${cryptpart}" > ${encrypt_pipe}
     log "[open_partition] opening ${cryptpart} and mounting for chroot"
-    prun /usr/sbin/cryptsetup luksOpen --key-file=${tik_keyfile} ${cryptpart} aeon_root
+    prun /usr/sbin/cryptsetup luksOpen --key-file="${tik_keyfile}" "${cryptpart}" yuga_root
     echo "35" > ${encrypt_pipe}
-    prun /usr/bin/mount -o compress=zstd:1 /dev/mapper/aeon_root ${encrypt_dir}/mnt
+    prun /usr/bin/mount -o compress=zstd:1 /dev/mapper/yuga_root ${encrypt_dir}/mnt
     for i in proc dev sys tmp 'sys/firmware/efi/efivars' 'sys/fs/cgroup'; do
         prun /usr/bin/mount --bind "/$i" "${encrypt_dir}/mnt/$i"
     done
-    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/.snapshots /dev/mapper/aeon_root ${encrypt_dir}/mnt/.snapshots
-    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/var /dev/mapper/aeon_root ${encrypt_dir}/mnt/var
+    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/.snapshots /dev/mapper/yuga_root ${encrypt_dir}/mnt/.snapshots
+    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/var /dev/mapper/yuga_root ${encrypt_dir}/mnt/var
     etcmountcmd=$(cat ${encrypt_dir}/mnt/etc/fstab | grep "overlay /etc" | sed 's/\/sysroot\//${encrypt_dir}\/mnt\//g' | sed 's/\/work-etc.*/\/work-etc ${encrypt_dir}\/mnt\/etc\//' | sed 's/overlay \/etc overlay/\/usr\/bin\/mount -t overlay overlay -o/')
     eval prun "$etcmountcmd"
-    prun /usr/bin/mount ${esppart} ${encrypt_dir}/mnt/boot/efi
+    prun /usr/bin/mount "${esppart}" ${encrypt_dir}/mnt/boot/efi
     prun /usr/bin/mount -t tmpfs tmpfs "${encrypt_dir}/mnt/run"
     prun /usr/bin/mount -t securityfs securityfs "${encrypt_dir}/mnt/sys/kernel/security"
     echo "42" > ${encrypt_pipe}
@@ -84,14 +84,14 @@ configure_encryption() {
     fi
     echo "# Writing cmdline, crypttab, and fstab" > ${encrypt_pipe}
     log "[configure_encryption] configuring cmdline, crypttab, PCR policy, fstab and populating ${esppart}"
-    espUUID=$(lsblk -n -r -o UUID ${esppart})
-    prun /usr/bin/gawk -v espUUID=$espUUID -i inplace '$2 == "/boot/efi" { $1 = "UUID="espUUID } { print $0 }' ${encrypt_dir}/mnt/etc/fstab
+    espUUID=$(lsblk -n -r -o UUID "${esppart}")
+    prun /usr/bin/gawk -v espUUID="$espUUID" -i inplace '$2 == "/boot/efi" { $1 = "UUID="espUUID } { print $0 }' ${encrypt_dir}/mnt/etc/fstab
     # root=UUID= cmdline definition is a hard requirement of sdbootutil for updating predictions
-    rootUUID=$(lsblk -n -r -o UUID /dev/mapper/aeon_root)
+    rootUUID=$(lsblk -n -r -o UUID /dev/mapper/yuga_root)
     prun /usr/bin/sed -i -e "s,\$, root=UUID=${rootUUID}," ${encrypt_dir}/mnt/etc/kernel/cmdline
     # /etc/crypttab is a hard requirement of sdbootutil for updating predictions
-    cryptUUID=$(lsblk -n -r -d -o UUID ${cryptpart})
-    echo "aeon_root UUID=${cryptUUID} none x-initrd.attach${crypttab_opts}" | prun tee ${encrypt_dir}/mnt/etc/crypttab
+    cryptUUID=$(lsblk -n -r -d -o UUID "${cryptpart}")
+    echo "yuga_root UUID=${cryptUUID} none x-initrd.attach${crypttab_opts}" | prun tee ${encrypt_dir}/mnt/etc/crypttab
     echo "# Installing boot loader" > ${encrypt_pipe}
     # Populate ESP
     prun /usr/bin/chroot ${encrypt_dir}/mnt sdbootutil -vv --esp-path /boot/efi --no-variables install 1>&2
@@ -138,7 +138,7 @@ EOF
         echo "73" > ${encrypt_pipe}
         log "[configure_encryption] Default Mode - Enrolling ${cryptpart} to TPM 2.0"
         echo "# Enrolling to TPM" > ${encrypt_pipe}
-        prun /usr/bin/chroot ${encrypt_dir}/mnt systemd-cryptenroll --unlock-key-file=${tik_keyfile} --tpm2-device=auto ${cryptpart}
+        prun /usr/bin/chroot ${encrypt_dir}/mnt systemd-cryptenroll --unlock-key-file="${tik_keyfile}" --tpm2-device=auto "${cryptpart}"
         echo "76" > ${encrypt_pipe}
     fi
 }
@@ -150,7 +150,7 @@ close_partition() {
         prun /usr/bin/umount "${encrypt_dir}/mnt/$i"
     done
     prun /usr/bin/umount ${encrypt_dir}/mnt
-    prun /usr/sbin/cryptsetup luksClose aeon_root
+    prun /usr/sbin/cryptsetup luksClose yuga_root
     echo "77" > ${encrypt_pipe}
 }
 
@@ -172,7 +172,7 @@ generate_recoveryKey() {
 add_recoveryKey() {
     echo "# Adding recovery key to ${cryptpart}" > ${encrypt_pipe}
     log "[add_recoveryKey] adding recovery key to ${cryptpart}"
-    prun /usr/sbin/cryptsetup luksAddKey --key-file=${tik_keyfile} --batch-mode --force-password "${cryptpart}" <<<"${key}"
+    prun /usr/sbin/cryptsetup luksAddKey --key-file="${tik_keyfile}" --batch-mode --force-password "${cryptpart}" <<<"${key}"
     echo '{"type":"systemd-recovery","keyslots":["2"]}' | prun /usr/sbin/cryptsetup token import "${cryptpart}"
     echo "100" > ${encrypt_pipe}
 }
@@ -181,7 +181,7 @@ display_recoveryKey() {
     local message="This ${TIK_OS_NAME} system is encrypted and checks its own integrity on every boot\nIn the event of these integrity checks failing, you will need to use the Recovery Key provided below to enter this system\n\nLikely reasons for integrity checks failing include:\n\n• Secure Boot changed from enabled or disabled\n• Boot drive was moved to a different computer\n• Disk partitions were changed\n• Boot loader or initrd were altered unexpectedly\n\nIf you are unaware as to why the system is requesting the recovery key, this systems security may have been compromised\nThe best course of action may be to not unlock the disk until you can determine what changed to require the Recovery Key\n\nThis systems Recovery Key is:\n\n        <b><big>${key}</big></b>\n\nPlease save this secret Recovery Key in a secure location\n\n"
     log "[display_recoveryKey] displaying recovery key"
     logging=false
-    d --width=500 --height=500 --no-wrap --warning --icon=security-high-symbolic --title="Encryption Recovery Key" --text="${message}You may optionally scan the recovery key off screen:\n<span face='monospace'>$(qrencode ${key} -t UTF8i)</span>\nFor more information please visit <tt>https://aeondesktop.org/encrypt</tt>"
+    d --width=500 --height=500 --no-wrap --warning --icon=security-high-symbolic --title="Encryption Recovery Key" --text="${message}You may optionally scan the recovery key off screen:\n<span face='monospace'>$(qrencode "${key}" -t UTF8i)</span>\nFor more information please visit <tt>https://aeondesktop.org/encrypt</tt>"
     logging=true
     log "[display_recoveryKey] recovery key dialogue dismissed"
 }
@@ -206,7 +206,7 @@ add_fallback_key() {
             key=""
         fi
         if [ -n "${key}" ]; then
-            prun /usr/sbin/cryptsetup luksAddKey --key-file=${tik_keyfile} --batch-mode --force-password "${cryptpart}" <<<"${key}"
+            prun /usr/sbin/cryptsetup luksAddKey --key-file="${tik_keyfile}" --batch-mode --force-password "${cryptpart}" <<<"${key}"
         fi
         break
     done
@@ -214,7 +214,7 @@ add_fallback_key() {
 }
 
 display_gamepadKey() {
-    local message="This ${TIK_OS_NAME} system is encrypted and checks its own integrity on every boot\nIn the event of these integrity checks failing, you will need to use the Recovery Key you created to enter this system\n\nLikely reasons for integrity checks failing include:\n\n• Secure Boot changed from enabled or disabled\n• Boot drive was moved to a different computer\n• Disk partitions were changed\n• Boot loader or initrd were altered unexpectedly\n\nIf you are unaware as to why the system is requesting the recovery key, this systems security may have been compromised\nThe best course of action may be to not unlock the disk until you can determine what changed to require the Recovery Key\n\nThis systems Recovery Key is:\n\n        <b><big>${key}</big></b>\n\nThese are the gamepad inputs that you can use to enter your password when asked on boot:\n\n        <b><big>${friendly_gamepad_inputs}</big></b>\n\nPlease save this secret Recovery Key in a secure location\n\n"
+    local message="This ${TIK_OS_NAME} system is encrypted and checks its own integrity on every boot\nIn the event of these integrity checks failing, you will need to use the Recovery Key you created to enter this system\n\nLikely reasons for integrity checks failing include:\n\n• Secure Boot changed from enabled or disabled\n• Boot drive was moved to a different computer\n• Disk partitions were changed\n• Boot loader or initrd were altered unexpectedly\n\nIf you are unaware as to why the system is requesting the recovery key, this systems security may have been compromised\nThe best course of action may be to not unlock the disk until you can determine what changed to require the Recovery Key\n\nThis systems Recovery Key is:\n\n        <b><big>${key}</big></b>\n\nThese are the gamepad inputs that you can use to enter your recovery key:\n\n        <b><big>${friendly_gamepad_inputs}</big></b>\n\nPlease save this secret Recovery Key in a secure location\n\n"
     log "[display_recoveryKey] displaying recovery key"
     logging=false
     local qr_key="recovery key: ${key}"$'\n'$'\n'"gamepad inputs: ${friendly_gamepad_inputs}"
@@ -399,8 +399,9 @@ add_key() {
     echo "# Enrolling custom key" > "${encrypt_pipe}"
     kill $deckrypt_pid
     key=$key1
-    friendly_gamepad_inputs="$(IFS=';' ; echo "${final_arr1[*]}" | sed 's/;/; /g')"
-    prun /usr/sbin/cryptsetup luksAddKey --key-file=${tik_keyfile} --batch-mode --force-password "${cryptpart}" <<<"${key1}"
+    friendly_gamepad_inputs="$(IFS='-' ; echo "${final_arr1[*]}")"
+    friendly_gamepad_inputs="${friendly_gamepad_inputs//"-"/" -- "}"
+    prun /usr/sbin/cryptsetup luksAddKey --key-file="${tik_keyfile}" --batch-mode --force-password "${cryptpart}" <<<"${key1}"
     log "[add_key] Successfully enrolled the passphrase in LUKS"
 
     if [ "${tik_encrypt_mode}" == 1 ]; then

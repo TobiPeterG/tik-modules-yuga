@@ -15,7 +15,7 @@ steam_progress() {
 find_crypt() {
     echo "# Finding encrypted partition" > ${steam_pipe}
     log "[find_crypt] finding encrypted partition"
-    probe_partitions ${TIK_INSTALL_DEVICE} "crypto_LUKS"
+    probe_partitions "${TIK_INSTALL_DEVICE}" "crypto_LUKS"
     if [ -z "${probedpart}" ]; then
         error "encrypted partition not found"
     fi
@@ -28,14 +28,14 @@ open_partition() {
     echo "# Opening ${cryptpart}" > ${steam_pipe}
     echo "25" > ${steam_pipe}
     log "[open_partition] opening ${cryptpart} and mounting for chroot"
-    prun /usr/sbin/cryptsetup luksOpen --key-file=${tik_keyfile} ${cryptpart} aeon_root
-    prun /usr/bin/mount -o compress=zstd:1 /dev/mapper/aeon_root ${steam_dir}/mnt
+    prun /usr/sbin/cryptsetup luksOpen --key-file="${tik_keyfile}" "${cryptpart}" yuga_root
+    prun /usr/bin/mount -o compress=zstd:1 /dev/mapper/yuga_root "${steam_dir}"/mnt
     for i in proc dev sys tmp 'sys/firmware/efi/efivars' 'sys/fs/cgroup'; do
         prun /usr/bin/mount --bind "/$i" "${steam_dir}/mnt/$i"
     done
-    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/.snapshots /dev/mapper/aeon_root ${steam_dir}/mnt/.snapshots
-    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/var /dev/mapper/aeon_root ${steam_dir}/mnt/var
-    etcmountcmd=$(cat ${steam_dir}/mnt/etc/fstab | grep "overlay /etc" | sed 's/\/sysroot\//${steam_dir}\/mnt\//g' | sed 's/\/work-etc.*/\/work-etc ${steam_dir}\/mnt\/etc\//' | sed 's/overlay \/etc overlay/\/usr\/bin\/mount -t overlay overlay -o/')
+    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/.snapshots /dev/mapper/yuga_root "${steam_dir}"/mnt/.snapshots
+    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/var /dev/mapper/yuga_root "${steam_dir}"/mnt/var
+    etcmountcmd=$(grep "overlay /etc" "${steam_dir}"/mnt/etc/fstab | sed 's/\/sysroot\//${steam_dir}\/mnt\//g' | sed 's/\/work-etc.*/\/work-etc ${steam_dir}\/mnt\/etc\//' | sed 's/overlay \/etc overlay/\/usr\/bin\/mount -t overlay overlay -o/')
     eval prun "$etcmountcmd"
     prun /usr/bin/mount -t tmpfs tmpfs "${steam_dir}/mnt/run"
     prun /usr/bin/mount -t securityfs securityfs "${steam_dir}/mnt/sys/kernel/security"
@@ -59,8 +59,8 @@ close_partition() {
     for i in proc dev run tmp etc var '.snapshots' 'sys/kernel/security' 'sys/firmware/efi/efivars' 'sys/fs/cgroup' sys; do
         prun /usr/bin/umount "${steam_dir}/mnt/$i"
     done
-    prun /usr/bin/umount ${steam_dir}/mnt
-    prun /usr/sbin/cryptsetup luksClose aeon_root
+    prun /usr/bin/umount "${steam_dir}"/mnt
+    prun /usr/sbin/cryptsetup luksClose yuga_root
     echo "100" > ${steam_pipe}
 }
 

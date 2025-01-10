@@ -16,7 +16,7 @@ factory_reset_progress() {
 find_crypt() {
     echo "# Finding encrypted partition" > ${factory_reset_pipe}
     log "[find_crypt] finding encrypted partition"
-    probe_partitions ${TIK_INSTALL_DEVICE} "crypto_LUKS"
+    probe_partitions "${TIK_INSTALL_DEVICE}" "crypto_LUKS"
     if [ -z "${probedpart}" ]; then
         error "encrypted partition not found"
     fi
@@ -38,20 +38,20 @@ find_esp() {
 open_partition() {
     echo "# Opening ${cryptpart}" > ${factory_reset_pipe}
     log "[open_partition] opening ${cryptpart} and mounting for chroot"
-    prun /usr/sbin/cryptsetup luksOpen --key-file=${tik_keyfile} ${cryptpart} aeon_root
+    prun /usr/sbin/cryptsetup luksOpen --key-file="${tik_keyfile}" "${cryptpart}" yuga_root
     echo "35" > ${factory_reset_pipe}
-    prun /usr/bin/mount -o compress=zstd:1 /dev/mapper/aeon_root ${factory_reset_dir}/mnt
+    prun /usr/bin/mount -o compress=zstd:1 /dev/mapper/yuga_root ${factory_reset_dir}/mnt
     for i in proc dev sys tmp 'sys/firmware/efi/efivars' 'sys/fs/cgroup'; do
         prun /usr/bin/mount --bind "/$i" "${factory_reset_dir}/mnt/$i"
     done
-    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/.snapshots /dev/mapper/aeon_root ${factory_reset_dir}/mnt/.snapshots
-    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/var /dev/mapper/aeon_root ${factory_reset_dir}/mnt/var
+    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/.snapshots /dev/mapper/yuga_root ${factory_reset_dir}/mnt/.snapshots
+    prun /usr/bin/mount -o compress=zstd:1,subvol=/@/var /dev/mapper/yuga_root ${factory_reset_dir}/mnt/var
     etcmountcmd=$(cat ${factory_reset_dir}/mnt/etc/fstab | grep "overlay /etc" | sed 's/\/sysroot\//${factory_reset_dir}\/mnt\//g' | sed 's/\/work-etc.*/\/work-etc ${factory_reset_dir}\/mnt\/etc\//' | sed 's/overlay \/etc overlay/\/usr\/bin\/mount -t overlay overlay -o/')
     eval prun "$etcmountcmd"
-    prun /usr/bin/mount ${esppart} ${factory_reset_dir}/mnt/boot/efi
+    prun /usr/bin/mount "${esppart}" ${factory_reset_dir}/mnt/boot/efi
     prun /usr/bin/mount -t tmpfs tmpfs "${factory_reset_dir}/mnt/run"
     prun /usr/bin/mount -t securityfs securityfs "${factory_reset_dir}/mnt/sys/kernel/security"
-    prun /usr/bin/mount -t btrfs -o subvol=/ /dev/mapper/aeon_root "${factory_reset_dir}/mnt/mnt"
+    prun /usr/bin/mount -t btrfs -o subvol=/ /dev/mapper/yuga_root "${factory_reset_dir}/mnt/mnt"
     echo "42" > ${factory_reset_pipe}
 }
 
@@ -108,7 +108,7 @@ close_partition() {
         prun /usr/bin/umount "${factory_reset_dir}/mnt/$i"
     done
     prun /usr/bin/umount ${factory_reset_dir}/mnt
-    prun /usr/sbin/cryptsetup luksClose aeon_root
+    prun /usr/sbin/cryptsetup luksClose yuga_root
     echo "100" > ${factory_reset_pipe}
 }
 
