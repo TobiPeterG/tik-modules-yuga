@@ -225,7 +225,7 @@ display_gamepadKey() {
 add_key() {
     echo "# Checking for supported gamepad" > "${encrypt_pipe}"
     retval=0
-    deckrypt -t || retval=$?
+    /usr/bin/deckrypt -t || retval=$?
     if [ "${retval}" -ne 0 ]; then
         log "[add_key] No supported controller detected (deckrypt -t => ${retval})."
         if [ "${tik_encrypt_mode}" == 1 ]; then
@@ -241,12 +241,12 @@ add_key() {
 
     echo "# Gathering device info" > "${encrypt_pipe}"
     local device_info
-    device_info="$(deckrypt -d -a)"
+    device_info="$(/usr/bin/deckrypt -d -a)"
     local ret_d=$?
 
     local sysvendor productname
-    sysvendor="$(cat /sys/class/dmi/id/sys_vendor 2>/dev/null || echo '')"
-    productname="$(cat /sys/class/dmi/id/product_name 2>/dev/null || echo '')"
+    sysvendor="$(/usr/bin/cat /sys/class/dmi/id/sys_vendor 2>/dev/null || echo '')"
+    productname="$(/usr/bin/cat /sys/class/dmi/id/product_name 2>/dev/null || echo '')"
 
     local matched_line=""
     while IFS= read -r line; do
@@ -303,9 +303,9 @@ add_key() {
     passphrase_file="/tmp/deckrypt_passphrase"
     passphrase_file_clean="/tmp/deckrypt_passphrase_clean"
     (
-      # Start deckrypt in the background so we can wait for them to press Enter
+      # Start deckrypt in the background
       # The user will type on the controller to produce passphrase lines
-      deckrypt -f -c -a > "$passphrase_file"
+      /usr/bin/deckrypt -f -c -a > "$passphrase_file"
     ) & deckrypt_pid=$!
     local gmsg key1 key2
     local -a final_arr1=()

@@ -56,7 +56,12 @@ if [ -z "${skipbackup}" ]; then
                 # but ensure we will clean up afterwards
                 crypt_opened="${crypt_opened} crypt_${encrypted_partition}"
             else
-                while [ 1 ]; do
+                (
+                  # Start deckrypt in the background so they can enter their input using their gamepad
+                  # The user will type on the controller to produce passphrase lines
+                  /usr/bin/deckrypt -c -a
+                ) & deckrypt_pid=$!
+                while true; do
                     if $gui; then
                         passphrase=$(zenity --password --title="Encrypted partition (${encrypted_partition}) detected" --cancel-label="Skip") || break
                     else
@@ -76,6 +81,7 @@ if [ -z "${skipbackup}" ]; then
                         fi
                     fi
                 done
+                kill $deckrypt_pid
             fi
         done
     unset passphrase
