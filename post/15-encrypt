@@ -326,7 +326,7 @@ add_key() {
         final_arr2=()
         msg="Enter a passphrase using the gamepad"
         gmsg="\\n\\nEvery gamepad button/axis results in one character and cannot be combined, except for this buttons/axis:\\n• <b>ENTER</b>: ${enter}\\nAnd these two modifier keys:\\n• <b>SHIFT</b>: ${shift}\\n• <b>ALTERNATE</b>: ${alternate}\\n\\nThese buttons have the following functions:\\n• Press and hold one of these two modifier inputs and press a regular input to create a different character.\\n• Press the <b>ENTER</b> input on its own to emulate pressing the enter key.\\n• Press and hold <b>SHIFT OR ALTERNATE</b> and press <b>ENTER</b> to delete the last character."
-        [ -z "$instructions" ] || imsg="\\n\\nPlease follow these additional instructions for your device:\\n${instructions}"
+        [ -z "$instructions" ] || imsg="\\n\\nPlease follow these additional instructions for your device:\\n${instructions}\\n\\nYou will be asked to switch the device back to regular mode later."
         omsg="\\n\\nClick <b>OK</b> to finish your input."
         msg="${msg}${gmsg}${imsg}${omsg}"
         retval=0
@@ -357,6 +357,7 @@ add_key() {
             true > "$passphrase_file_clean"
 
             if [ "$retval" -ne 0 ]; then
+                sleep 2
                 d_opt --question --text="Do you really want to quit?" && exit 1
                 continue
             fi
@@ -405,6 +406,12 @@ add_key() {
         fi
         break
     done
+
+    if [ -n "$instructions" ]; then
+        zenity --width=500 --info --text="Please switch your device back to regular mode.\nThe instructions you were given are:\n$instructions" --title="Switch Device to regular mode"
+        sleep 2
+    fi
+
     rm -f $passphrase_file
     rm -f $passphrase_file_clean
 
