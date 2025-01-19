@@ -329,6 +329,7 @@ add_key() {
         true > "$passphrase_file_clean"
 
         if [ "$retval" -ne 0 ]; then
+            sleep 2
             d_opt --question --text="Do you really want to quit?" && exit 1
             continue
         fi
