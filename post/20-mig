@@ -18,7 +18,7 @@ EOF
 
 
 if [ "${migrate}" == 1 ]; then
-    probe_partitions "${TIK_INSTALL_DEVICE}" "crypto_LUKS"
+    probe_partitions "${TIK_INSTALL_DEVICE}" "Linux\x20root\x20(x86-64)"
     [ -z "${probedpart}" ] || prun /usr/sbin/cryptsetup luksOpen --key-file="${tik_keyfile}" "${cryptpart}" yuga_root
 
     probe_partitions "$TIK_INSTALL_DEVICE" "btrfs" "/usr/lib/os-release"

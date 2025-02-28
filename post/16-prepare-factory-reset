@@ -16,7 +16,7 @@ factory_reset_progress() {
 find_crypt() {
     echo "# Finding encrypted partition" > ${factory_reset_pipe}
     log "[find_crypt] finding encrypted partition"
-    probe_partitions "${TIK_INSTALL_DEVICE}" "crypto_LUKS"
+    probe_partitions "${TIK_INSTALL_DEVICE}" "Linux\x20root\x20(x86-64)"
     if [ -z "${probedpart}" ]; then
         error "encrypted partition not found"
     fi
@@ -28,7 +28,7 @@ find_crypt() {
 find_esp() {
     echo "# Finding installation ESP partition" > "${factory_reset_pipe}"
     log "[find_esp] finding ESP"
-    probe_partitions "${TIK_INSTALL_DEVICE}" "vfat"
+    probe_partitions "${TIK_INSTALL_DEVICE}" "EFI\x20System"
     [ -n "${probedpart}" ] || error "POST INSTALL FAILED: ESP Partition NOT FOUND"
     esppart="${probedpart}"
     log "[find_esp] found ${esppart}"

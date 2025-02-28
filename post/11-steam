@@ -15,7 +15,7 @@ steam_progress() {
 find_crypt() {
     echo "# Finding encrypted partition" > ${steam_pipe}
     log "[find_crypt] finding encrypted partition"
-    probe_partitions "${TIK_INSTALL_DEVICE}" "crypto_LUKS"
+    probe_partitions "${TIK_INSTALL_DEVICE}" "Linux\x20root\x20(x86-64)"
     if [ -z "${probedpart}" ]; then
         error "encrypted partition not found"
     fi
