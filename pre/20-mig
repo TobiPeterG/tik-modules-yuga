@@ -112,7 +112,7 @@ if [ -z "${skipbackup}" ]; then
         prun /usr/bin/rmdir ${mig_dir}/mnt
         # partition found, /home subvolume found, no known reason to not migrate, so ask the user
         if [ -z "${migrate}" ]; then
-            d --question --no-wrap --title="Backup users from the existing install?" --text="These users will be restored to the new installation."
+            d_opt --question --no-wrap --title="Backup users from the existing install?" --text="These users will be restored to the new installation."
             migrateyn=$?
             if [ "${migrateyn}" == 0 ]; then
                 migrate=1
