@@ -188,18 +188,18 @@ display_recoveryKey() {
     local message="This ${TIK_OS_NAME} system is encrypted and checks its own integrity on every boot\nIn the event of these integrity checks failing, you will need to use the Recovery Key provided below to enter this system\n\nLikely reasons for integrity checks failing include:\n\n• Secure Boot changed from enabled or disabled\n• Boot drive was moved to a different computer\n• Disk partitions were changed\n• Boot loader or initrd were altered unexpectedly\n\nIf you are unaware as to why the system is requesting the recovery key, this systems security may have been compromised\nThe best course of action may be to not unlock the disk until you can determine what changed to require the Recovery Key\n\nThis systems Recovery Key is:\n\n        <b><big>${key}</big></b>\n\nPlease save this secret Recovery Key in a secure location\n\n"
     log "[display_recoveryKey] displaying recovery key"
     logging=false
-    d --width=500 --height=500 --no-wrap --warning --icon=security-high-symbolic --title="Encryption Recovery Key" --text="${message}You may optionally scan the recovery key and the corresponding gamepad inputs off screen at the next step.\n\nFor more information please visit <tt>https://aeondesktop.org/encrypt</tt>"
+    d --width=500 --height=500 --no-wrap --warning --icon=security-high-symbolic --title="Encryption Recovery Key" --text="${message}You may optionally scan the recovery key off screen at the next step.\n\nFor more information please visit <tt>https://aeondesktop.org/encrypt</tt>"
     logging=true
     log "[display_recoveryKey] recovery key dialogue dismissed"
     display_qr_code
 }
 
 display_qr_code() {
-    log "[display_q_code] displaying QR code"
+    log "[display_qr_code] displaying QR code"
     logging=false
-    d --width=500 --height=500 --no-wrap --warning --icon=security-high-symbolic --title="Encryption QR code" --text="You may optionally scan the recovery key and the corresponding gamepad inputs off screen:\n<span face='monospace'>$(qrencode "${key}" -t UTF8i)</span>"
+    d --width=500 --height=500 --no-wrap --warning --icon=security-high-symbolic --title="Encryption QR code" --text="You may optionally scan the recovery key off screen:\n<span face='monospace'>$(qrencode "${key}" -t UTF8i)</span>"
     logging=true
-    log "[display_q_code] QR code dialogue dismissed"
+    log "[display_qr_code] QR code dialogue dismissed"
 }
 
 add_fallback_key() {
@@ -230,12 +230,21 @@ add_fallback_key() {
 
 display_gamepadKey() {
     local message="This ${TIK_OS_NAME} system is encrypted and checks its own integrity on every boot\nIn the event of these integrity checks failing, you will need to use the Recovery Key you created to enter this system\n\nLikely reasons for integrity checks failing include:\n\n• Secure Boot changed from enabled or disabled\n• Boot drive was moved to a different computer\n• Disk partitions were changed\n• Boot loader or initrd were altered unexpectedly\n\nIf you are unaware as to why the system is requesting the recovery key, this systems security may have been compromised\nThe best course of action may be to not unlock the disk until you can determine what changed to require the Recovery Key\n\nThis systems Recovery Key is:\n\n        <b><big>${key}</big></b>\n\nThese are the gamepad inputs that you can use to enter your recovery key:\n\n        <b><big>${friendly_gamepad_inputs}</big></b>\n\nPlease save this secret Recovery Key in a secure location\n\n"
-    log "[display_recoveryKey] displaying recovery key"
+    log "[display_gamepadKey] displaying recovery key"
     logging=false
     local qr_key="recovery key: ${key}"$'\n'$'\n'"gamepad inputs: ${friendly_gamepad_inputs}"
-    d --width=500 --height=500 --no-wrap --warning --icon=security-high-symbolic --title="Encryption Recovery Key" --text="${message}You may optionally scan the recovery key off screen:\n<span face='monospace'>$(qrencode "${qr_key}" -t UTF8i)</span>\nFor more information please visit <tt>https://aeondesktop.org/encrypt</tt>"
+    d --width=500 --height=500 --no-wrap --warning --icon=security-high-symbolic --title="Encryption Recovery Key" --text="${message}You may optionally scan the recovery key off screen at the next step.\nFor more information please visit <tt>https://aeondesktop.org/encrypt</tt>"
     logging=true
-    log "[display_recoveryKey] recovery key dialogue dismissed"
+    log "[display_gamepadKey] recovery key dialogue dismissed"
+    display_qr_code_gamepad
+}
+
+display_qr_code_gamepad() {
+    log "[display_qr_code_gamepad] displaying QR code"
+    logging=false
+    d --width=500 --height=500 --no-wrap --warning --icon=security-high-symbolic --title="Encryption QR code" --text="You may optionally scan the recovery key and the corresponding gamepad inputs off screen:\n<span face='monospace'>$(qrencode "${qr_key}" -t UTF8i)</span>"
+    logging=true
+    log "[display_qr_code_gamepad] QR code dialogue dismissed"
 }
 
 add_key() {
