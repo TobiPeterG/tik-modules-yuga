@@ -35,8 +35,13 @@ open_partition() {
     done
     prun /usr/bin/mount -o compress=zstd:1,subvol=/@/.snapshots /dev/mapper/yuga_root "${steam_dir}"/mnt/.snapshots
     prun /usr/bin/mount -o compress=zstd:1,subvol=/@/var /dev/mapper/yuga_root "${steam_dir}"/mnt/var
-    etcmountcmd=$(grep "overlay /etc" "${steam_dir}"/mnt/etc/fstab | sed 's/\/sysroot\//${steam_dir}\/mnt\//g' | sed 's/\/work-etc.*/\/work-etc ${steam_dir}\/mnt\/etc\//' | sed 's/overlay \/etc overlay/\/usr\/bin\/mount -t overlay overlay -o/')
-    eval prun "$etcmountcmd"
+    # Detect whether /etc is overlay else assume it's a T-U 5.0+ later bind mount
+    if grep -qF 'overlay /etc' ${steam_dir}/mnt/etc/fstab ; then
+        etcmountcmd=$(cat ${steam_dir}/mnt/etc/fstab | grep "overlay /etc" | sed 's/\/sysroot\//${steam_dir}\/mnt\//g' | sed 's/\/work-etc.*/\/work-etc ${steam_dir}\/mnt\/etc\//' | sed 's/overlay \/etc overlay/\/usr\/bin\/mount -t overlay overlay -o/')
+        eval prun "$etcmountcmd"
+    else
+        prun /usr/bin/mount -o bind ${steam_dir}/mnt/etc ${steam_dir}/mnt/etc
+    fi
     prun /usr/bin/mount -t tmpfs tmpfs "${steam_dir}/mnt/run"
     prun /usr/bin/mount -t securityfs securityfs "${steam_dir}/mnt/sys/kernel/security"
     echo "40" > ${steam_pipe}

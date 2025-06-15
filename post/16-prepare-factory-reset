@@ -46,8 +46,13 @@ open_partition() {
     done
     prun /usr/bin/mount -o compress=zstd:1,subvol=/@/.snapshots /dev/mapper/yuga_root ${factory_reset_dir}/mnt/.snapshots
     prun /usr/bin/mount -o compress=zstd:1,subvol=/@/var /dev/mapper/yuga_root ${factory_reset_dir}/mnt/var
-    etcmountcmd=$(cat ${factory_reset_dir}/mnt/etc/fstab | grep "overlay /etc" | sed 's/\/sysroot\//${factory_reset_dir}\/mnt\//g' | sed 's/\/work-etc.*/\/work-etc ${factory_reset_dir}\/mnt\/etc\//' | sed 's/overlay \/etc overlay/\/usr\/bin\/mount -t overlay overlay -o/')
-    eval prun "$etcmountcmd"
+    # Detect whether /etc is overlay else assume it's a T-U 5.0+ later bind mount
+    if grep -qF 'overlay /etc' ${factory_reset_dir}/mnt/etc/fstab ; then
+        etcmountcmd=$(cat ${factory_reset_dir}/mnt/etc/fstab | grep "overlay /etc" | sed 's/\/sysroot\//${factory_reset_dir}\/mnt\//g' | sed 's/\/work-etc.*/\/work-etc ${factory_reset_dir}\/mnt\/etc\//' | sed 's/overlay \/etc overlay/\/usr\/bin\/mount -t overlay overlay -o/')
+        eval prun "$etcmountcmd"
+    else
+        prun /usr/bin/mount -o bind ${factory_reset_dir}/mnt/etc ${factory_reset_dir}/mnt/etc
+    fi
     prun /usr/bin/mount "${esppart}" ${factory_reset_dir}/mnt/boot/efi
     prun /usr/bin/mount -t tmpfs tmpfs "${factory_reset_dir}/mnt/run"
     prun /usr/bin/mount -t securityfs securityfs "${factory_reset_dir}/mnt/sys/kernel/security"
