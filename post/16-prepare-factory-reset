@@ -74,6 +74,11 @@ configure_factory_reset() {
     prun /usr/bin/cp "${factory_reset_dir}/mnt/.snapshots/.ori/info.xml" "${factory_reset_dir}/mnt/.snapshots/.fr/info.xml"
     echo "84" > "${factory_reset_pipe}"
     echo "# Finalizing system" > "${factory_reset_pipe}"
+    
+    prun /usr/bin/rm -rf "${factory_reset_dir}/mnt/.snapshots/.ori/snapshot/etc"
+    prun /usr/bin/rm -rf "${factory_reset_dir}/mnt/.snapshots/.fr/snapshot/etc"
+    prun /usr/sbin/btrfs subvolume snapshot "${factory_reset_dir}/mnt/.snapshots/1/snapshot/etc" "${factory_reset_dir}/mnt/.snapshots/.ori/snapshot/etc"
+    prun /usr/sbin/btrfs subvolume snapshot "${factory_reset_dir}/mnt/.snapshots/.ori/snapshot/etc" "${factory_reset_dir}/mnt/.snapshots/.fr/snapshot/etc"
 
     for dir in "${directories[@]}"
     do
@@ -92,7 +97,7 @@ configure_factory_reset() {
 
     for file in "${factory_reset_dir}"/mnt/boot/efi/loader/entries/*
     do
-        frpath="/mnt/.snapshots/.fr/bfr/efi/loader/entries/$(basename file)"
+        frpath="/mnt/.snapshots/.fr/bfr/efi/loader/entries/$(basename "$file")"
         # Check if it's a regular file
         if [ -f "$frpath" ]; then
             prun /usr/bin/sed -i "s/subvol=@\/.snapshots\/1/subvol=@\/.snapshots\/.fr/g" "$frpath"
